@@ -1,0 +1,108 @@
+"""
+Protocol Buffer definitions for gRPC services
+Compile with: python -m grpc_tools.protoc -I./grpc_service --python_out=./grpc_service --grpc_python_out=./grpc_service ./grpc_service/p2p_service.proto
+"""
+
+syntax = "proto3";
+
+package p2p_service;
+
+// File storage service messages
+message FileChunk {
+    string segment_id = 1;
+    string file_id = 2;
+    int32 chunk_number = 3;
+    bytes data = 4;
+    string checksum = 5;
+}
+
+message FileMetadata {
+    string file_id = 1;
+    string original_filename = 2;
+    string file_hash = 3;
+    int64 total_size_bytes = 4;
+    int32 chunk_size_bytes = 5;
+    int32 total_chunks = 6;
+    string created_at = 7;
+}
+
+message StoreSegmentRequest {
+    FileChunk chunk = 1;
+}
+
+message StoreSegmentResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message RetrieveSegmentRequest {
+    string segment_id = 1;
+}
+
+message RetrieveSegmentResponse {
+    bool found = 1;
+    FileChunk chunk = 2;
+}
+
+message HealthCheckRequest {
+    string source_node_id = 1;
+}
+
+message HealthCheckResponse {
+    bool is_alive = 1;
+    string node_id = 2;
+}
+
+message NetworkTopologyRequest {
+}
+
+message NodeInfo {
+    string node_id = 1;
+    string ip_address = 2;
+    string status = 3;
+    int64 storage_used_bytes = 4;
+    int64 storage_capacity_bytes = 5;
+    int32 files_stored = 6;
+}
+
+message NetworkTopologyResponse {
+    string network_name = 1;
+    repeated NodeInfo nodes = 2;
+}
+
+// File upload/download service
+message UploadFileRequest {
+    string filename = 1;
+    bytes content = 2;
+    int32 chunk_size = 3;
+}
+
+message UploadFileResponse {
+    bool success = 1;
+    string file_id = 2;
+    int32 total_chunks = 3;
+    string message = 4;
+}
+
+message DownloadFileRequest {
+    string file_id = 1;
+}
+
+message DownloadFileResponse {
+    bool success = 1;
+    string filename = 2;
+    bytes content = 3;
+}
+
+// RPC services
+service FileStorageService {
+    rpc StoreSegment(StoreSegmentRequest) returns (StoreSegmentResponse);
+    rpc RetrieveSegment(RetrieveSegmentRequest) returns (RetrieveSegmentResponse);
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+    rpc GetNetworkTopology(NetworkTopologyRequest) returns (NetworkTopologyResponse);
+}
+
+service FileTransferService {
+    rpc UploadFile(UploadFileRequest) returns (UploadFileResponse);
+    rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse);
+}
